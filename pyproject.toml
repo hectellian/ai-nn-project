@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ai-nn-project"
+name = "ai_nn_project"
 version = "0.1.0"
 description = ""
 authors = ["Anthony Christoforou <anthony.christoforou@etu.unige.ch>"]
@@ -12,7 +12,6 @@ numpy = "^1.26.2"
 matplotlib = "^3.8.2"
 networkx = "^3.2.1"
 pandas = "^2.1.4"
-
 
 [build-system]
 requires = ["poetry-core"]
