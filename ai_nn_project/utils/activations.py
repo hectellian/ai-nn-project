@@ -37,22 +37,3 @@ class Linear(ActivationFunction):
     @staticmethod
     def derivative(z: np.ndarray) -> np.ndarray:
         return np.ones_like(z)
-    
-class Tanh(ActivationFunction):
-    @staticmethod
-    def activate(z: np.ndarray) -> np.ndarray:
-        return np.tanh(z)
-    
-    @staticmethod
-    def derivative(z: np.ndarray) -> np.ndarray:
-        return 1 - np.tanh(z) ** 2
-    
-class Softmax(ActivationFunction):
-    @staticmethod
-    def activate(z: np.ndarray) -> np.ndarray:
-        exps = np.exp(z - np.max(z, axis=0, keepdims=True))
-        return exps / np.sum(exps, axis=0, keepdims=True)
-    
-    @staticmethod
-    def derivative(z: np.ndarray) -> np.ndarray:
-        return Softmax.activate(z) * (1 - Softmax.activate(z))
