@@ -1,6 +1,7 @@
 # Libraries Imports
 import numpy as np
 
+# regression
 def mse_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """Computes Mean Squared Error Loss.
     
@@ -13,6 +14,55 @@ def mse_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """
     return ((y_true - y_pred) ** 2).mean()
 
+def rmse_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Computes Root Mean Squared Error Loss.
+    
+    Args:
+        y_true (numpy.ndarray): The true values.
+        y_pred (numpy.ndarray): The predicted values.
+        
+    Returns:
+        numpy.ndarray: The RMSE loss.
+    """
+    return np.sqrt(mse_loss(y_true, y_pred))
+
+def mae_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Computes Mean Absolute Error Loss.
+    
+    Args:
+        y_true (numpy.ndarray): The true values.
+        y_pred (numpy.ndarray): The predicted values.
+        
+    Returns:
+        numpy.ndarray: The MAE loss.
+    """
+    return np.abs(y_true - y_pred).mean()
+
+def mape_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Computes Mean Absolute Percentage Error Loss.
+    
+    Args:
+        y_true (numpy.ndarray): The true values.
+        y_pred (numpy.ndarray): The predicted values.
+        
+    Returns:
+        numpy.ndarray: The MAPE loss.
+    """
+    return np.abs((y_true - y_pred) / y_true).mean()
+
+def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Computes R2 Score.
+    
+    Args:
+        y_true (numpy.ndarray): The true values.
+        y_pred (numpy.ndarray): The predicted values.
+        
+    Returns:
+        numpy.ndarray: The R2 score.
+    """
+    return 1 - ((y_true - y_pred) ** 2).sum() / ((y_true - y_true.mean()) ** 2).sum()
+
+# classifications
 def precision(y_true, y_pred):
     """
     Calculate the precision of the predictions.
