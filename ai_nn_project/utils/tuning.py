@@ -7,33 +7,41 @@ import numpy as np
 from ai_nn_project.models.neuronal_network.multilayer_perceptron import MLP
 from ai_nn_project.models.neigbours.knn import KNN
 from ai_nn_project.utils.activations import ReLU
-
-def mlp_grid_search(model, X_train, y_train, X_test, y_test, params, metrics, verbose=False):
+    
+def grid_search(model_class: object, param_grid: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, scoring_func: callable) -> tuple[dict, float]:
     """Performs a grid search on the given model.
     
     Args:
         model (object): The model to use.
+        param_grid (dict): The parameters to use for the grid search.
         X_train (numpy.ndarray): The training data.
         y_train (numpy.ndarray): The training labels.
-        X_test (numpy.ndarray): The test data.
-        y_test (numpy.ndarray): The test labels.
-        params (dict): The parameters to use for the grid search.
-        metrics (list): The metrics to use for evaluation.
-        verbose (bool, optional): Whether to print the results. Defaults to False.
+        X_val (numpy.ndarray): The validation data.
+        y_val (numpy.ndarray): The validation labels.
+        scoring_func (callable): The scoring function to use.
         
     Returns:
-        dict: The results of the grid search.
+        dict: The best parameters.
+        float: The best score.
     """
-    results = {}
-    for param in tqdm(list(product(*params.values())), desc=f'Grid Search for {model.__class__.__name__} - {param}'):
-        param = {key: value for key, value in zip(params.keys(), param)}
-        fit_params = {}
-        model.set_params(**param)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        results[tuple(param.values())] = {metric.__name__: metric(y_test, y_pred) for metric in metrics}
-    if verbose:
-        print("Grid Search Results:")
-        for key, value in results.items():
-            print(f"{key}: {value}")
-    return results
+    best_score = None
+    best_params = None
+
+    for params in product(*param_grid.values()):
+        params_dict = dict(zip(param_grid.keys(), params))
+        model = model_class(**params_dict) 
+        
+        if isinstance(model, MLP):
+            model.fit(X_train, y_train, epochs=params_dict.get('epochs', 100), 
+                      batch_size=params_dict.get('batch_size', 32))
+        else:
+            model.fit(X_train, y_train)
+        
+        predictions = model.predict(X_val)
+        score = scoring_func(y_val, predictions)
+
+        if best_score is None or score > best_score:
+            best_score = score
+            best_params = params_dict
+
+    return best_params, best_score
