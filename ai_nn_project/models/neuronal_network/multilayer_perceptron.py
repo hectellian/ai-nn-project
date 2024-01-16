@@ -128,7 +128,7 @@ class MLP:
             self.weights[i] -= self.learning_rate * np.dot(delta, activations[i].T)
             self.biases[i] -= self.learning_rate * average_delta
 
-    def train(self, training_data: np.ndarray, labels: np.ndarray, epochs: int, batch_size: int, verbose: bool = False) -> list[dict[str, float]]:
+    def fit(self, training_data: np.ndarray, labels: np.ndarray, epochs: int, batch_size: int, verbose: bool = False) -> list[dict[str, float]]:
         """
         Trains the neural network using the provided training data and labels.
 
@@ -165,7 +165,7 @@ class MLP:
                 self.backward(output, batch_labels, activations)
 
                 # Convert output to binary predictions and calculate metrics
-                epoch_metrics['mse_loss'].append(mse_loss(batch_labels, output))
+                epoch_metrics['mse_loss'].append(mse_loss(batch_labels, output.T))
 
             # Compute average metrics for the epoch
             avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}

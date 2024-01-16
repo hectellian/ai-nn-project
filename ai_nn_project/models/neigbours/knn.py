@@ -6,17 +6,17 @@ K-Nearest Neighbors (KNN) Module
 This module provides an implementation of the K-Nearest Neighbors (KNN) algorithm for classification tasks.
 
 Classes:
-    KNNClassifier: Represents a K-Nearest Neighbors (KNN) classifier for binary or multiclass classification.
+    KNN: Represents a K-Nearest Neighbors (KNN)  for binary or multiclass classification.
 
 Functions:
     None
 
 Usage:
-    This module is intended to be used as part of the ai_nn_project, specifically within the classifiers module. The KNNClassifier class can be used to perform classification tasks on suitable datasets.
+    This module is intended to be used as part of the ai_nn_project, specifically within the module. The KNN class can be used to perform classification tasks on suitable datasets.
 
 Example:
-    from ai_nn_project.models.classifiers.knn import KNNClassifier
-    knn = KNNClassifier(k=3)  # Create a KNN classifier with k=3 neighbors
+    from ai_nn_project.models.knn import KNN
+    knn = KNN(k=3) # Create a KNN with k=3 neighbors
 
 Notes:
     - The module is part of the ai_nn_project and follows its coding standards and architectural design.
@@ -34,16 +34,13 @@ References:
     - https://scikit-learn.org/stable/modules/neighbors.html
 
 Last Modified:
-    02.01.2024
-
-See Also:
-    - ai_nn_project.models.classifiers.linear.perceptron
+    13.01.2024
 """
 
 # Libraries Imports
 import numpy as np
 
-class KNNClassifier:
+class KNN:
     """
     A simple K-Nearest Neighbors (KNN) model for classification.
 
@@ -51,13 +48,16 @@ class KNNClassifier:
         k (int): The number of neighbors to consider.
         X (numpy.ndarray): The training data.
         y (numpy.ndarray): The training labels.
+        mode (str): The mode of the KNN. Can be either 'classification' or 'regression'.
     """
-    def __init__(self, k: int = 1) -> None:
+    def __init__(self, k: int = 1, mode: str = 'classification') -> None:
         """
         Args:
             k (int, optional): The number of neighbors to consider. Defaults to 1.
+            mode (str, optional): The mode of the KNN. Can be either 'classification' or 'regression'. Defaults to 'classification'.
         """
         self.k = k
+        self.mode = mode
         
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -68,7 +68,7 @@ class KNNClassifier:
             y (numpy.ndarray): The training labels.
         """
         self.X = X
-        self.y = y
+        self.y = np.ravel(y)
         
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -95,7 +95,13 @@ class KNNClassifier:
         distances = [self._euclidean_distance(x, x_train) for x_train in self.X]
         k_indices = np.argsort(distances)[:self.k]
         k_nearest_labels = [self.y[i] for i in k_indices]
-        return np.bincount(k_nearest_labels).argmax()
+
+        if self.mode == 'classification':
+            return np.bincount(k_nearest_labels).argmax()
+        elif self.mode == 'regression':
+            return np.mean(k_nearest_labels)
+        else:
+            raise ValueError("Mode must be 'classification' or 'regression'")
     
     def _euclidean_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
         """
