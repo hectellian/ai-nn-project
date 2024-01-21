@@ -47,6 +47,7 @@ from tqdm.notebook import tqdm
 from ai_nn_project.utils.activations import ActivationFunction
 from ai_nn_project.utils.evaluations import mse_loss, precision, recall, f1_score, accuracy
 
+MAX_NORM = 1e-8  # Maximum norm for gradient clipping
 
 class MLP:
     """
@@ -58,7 +59,7 @@ class MLP:
         biases (list): List of bias vectors for each layer.
     """
 
-    def __init__(self, layer_sizes: list, activation_objects: list[ActivationFunction] = None, learning_rate: float = 0.01) -> None:
+    def __init__(self, layer_sizes: list, activation_objects: list[ActivationFunction] = None, learning_rate: float = 0.01, epochs: int = 100, batch_size: int = 32) -> None:
         """
         Initializes the Multi-Layer Perceptron with random weights and biases.
 
@@ -73,7 +74,10 @@ class MLP:
         
         self.activation_objects = activation_objects
         self.learning_rate = learning_rate
-        self.weights = [np.random.randn(y, x) for x, y in zip(layer_sizes[:-1], layer_sizes[1:])]
+        self.epochs = epochs
+        self.batch_size = batch_size
+        
+        self.weights = [np.random.randn(y, x) * np.sqrt(2. / x) for x, y in zip(layer_sizes[:-1], layer_sizes[1:])] # Initialize weights with He initialization
         self.biases = [np.random.randn(y, 1) for y in layer_sizes[1:]]
 
     def forward(self, input_data: np.ndarray) -> tuple[np.ndarray, list]:
@@ -114,29 +118,38 @@ class MLP:
             target (numpy.ndarray): The target values.
             activations (list): Activations of all layers from the forward pass.
         """
-        loss_derivative = self.compute_loss_derivative(output, target)
+        error = self.compute_loss_derivative(output, target)
+        
         for i in reversed(range(len(self.weights))):
-            activation = self.activation_objects[i]
-            activation_derivative = activation.derivative(activations[i + 1])
-            delta = loss_derivative * activation_derivative
-            loss_derivative = np.dot(self.weights[i].T, delta)
+            # Compute the derivative of the activation function
+            activation_derivative = self.activation_objects[i].derivative(activations[i + 1])
 
-            # Ensure that delta is averaged over the batch dimension for bias update
-            average_delta = np.mean(delta, axis=1, keepdims=True)
+            # Apply chain rule to calculate the delta for the current layer
+            delta = error * activation_derivative
+
+            # Calculate the gradient with respect to weights and biases
+            grad_w = np.dot(delta, activations[i].T) / delta.shape[1]  # Average over batch
+            grad_b = np.mean(delta, axis=1, keepdims=True)
             
-            # Gradient descent
-            self.weights[i] -= self.learning_rate * np.dot(delta, activations[i].T)
-            self.biases[i] -= self.learning_rate * average_delta
+            grad_w_norm = np.linalg.norm(grad_w)
+            if grad_w_norm > MAX_NORM:
+                grad_w = grad_w * MAX_NORM / grad_w_norm
 
-    def fit(self, training_data: np.ndarray, labels: np.ndarray, epochs: int, batch_size: int, verbose: bool = False) -> list[dict[str, float]]:
+            # Update weights and biases using gradient descent
+            self.weights[i] -= self.learning_rate * grad_w
+            self.biases[i] -= self.learning_rate * grad_b
+
+            # Propagate the error backwards to the previous layer
+            if i > 0:
+                error = np.dot(self.weights[i].T, delta)
+
+    def fit(self, training_data: np.ndarray, labels: np.ndarray, verbose: bool = False) -> list[dict[str, float]]:
         """
         Trains the neural network using the provided training data and labels.
 
         Args:
             training_data (np.ndarray): The training data.
             labels (np.ndarray): The training labels.
-            epochs (int): Number of epochs to train for.
-            batch_size (int): The size of each batch for training.
             verbose (bool): If True, prints verbose output. Default is False.
             
         Returns:
@@ -147,7 +160,7 @@ class MLP:
             raise ValueError("Input layer size does not match the number of features in training data.")
 
         metrics = []
-        for epoch in tqdm(range(epochs), desc='Training Progress', leave=False):
+        for epoch in tqdm(range(self.epochs), desc='Training Progress', leave=False):
             epoch_metrics = {'mse_loss': []}
 
             # Shuffle the data at the beginning of each epoch
@@ -156,8 +169,8 @@ class MLP:
             training_data = training_data[indices]
             labels = labels[indices]
 
-            for start_idx in range(0, len(training_data), batch_size):
-                end_idx = min(start_idx + batch_size, len(training_data))
+            for start_idx in range(0, len(training_data), self.batch_size):
+                end_idx = min(start_idx + self.batch_size, len(training_data))
                 batch_data = training_data[start_idx:end_idx].T  
                 batch_labels = labels[start_idx:end_idx].reshape(1, -1)  # Reshape labels as row vector
 
@@ -170,7 +183,7 @@ class MLP:
             # Compute average metrics for the epoch
             avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}
             if verbose:
-                print(f"Epoch {epoch + 1}/{epochs} - {avg_epoch_metrics}")
+                print(f"Epoch {epoch + 1}/{self.epochs} - {avg_epoch_metrics}")
             metrics.append(avg_epoch_metrics)
 
         return metrics
@@ -188,3 +201,21 @@ class MLP:
         """
         output, _ = self.forward(input_data)
         return output
+    
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the MLP.
+
+        Returns:
+            str: A string representation of the MLP.
+        """
+        return f"MLP(layer_sizes={self.layer_sizes}, activation_objects={self.activation_objects}, learning_rate={self.learning_rate}, epochs={self.epochs}, batch_size={self.batch_size})"
+    
+    def __repr__(self) -> str:
+        """
+        Returns a string representation of the MLP.
+
+        Returns:
+            str: A string representation of the MLP.
+        """
+        return f"MLP(layer_sizes={self.layer_sizes}, activation_objects={self.activation_objects}, learning_rate={self.learning_rate}, epochs={self.epochs}, batch_size={self.batch_size})"
