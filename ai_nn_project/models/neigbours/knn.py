@@ -39,7 +39,7 @@ Last Modified:
 
 # Libraries Imports
 import numpy as np
-
+from joblib import Parallel, delayed
 class KNN:
     """
     A simple K-Nearest Neighbors (KNN) model for classification.
@@ -72,7 +72,7 @@ class KNN:
         
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predicts the labels for the given data.
+        Predicts the labels for the given data in parallel.
         
         Args:
             X (numpy.ndarray): The data to predict the labels for.
@@ -80,7 +80,8 @@ class KNN:
         Returns:
             numpy.ndarray: The predicted labels.
         """
-        return np.array([self._predict(x) for x in X])
+        predictions = Parallel(n_jobs=-1)(delayed(self._predict)(x) for x in X) # Parallelize the predictions: https://stackoverflow.com/questions/9786102/how-do-i-parallelize-a-simple-python-loop
+        return np.array(predictions)
     
     def _predict(self, x: np.ndarray) -> int:
         """
@@ -92,9 +93,9 @@ class KNN:
         Returns:
             int: The predicted label.
         """
-        distances = [self._euclidean_distance(x, x_train) for x_train in self.X]
+        distances = self._euclidean_distance(x)
         k_indices = np.argsort(distances)[:self.k]
-        k_nearest_labels = [self.y[i] for i in k_indices]
+        k_nearest_labels = self.y[k_indices]
 
         if self.mode == 'classification':
             return np.bincount(k_nearest_labels).argmax()
@@ -103,7 +104,7 @@ class KNN:
         else:
             raise ValueError("Mode must be 'classification' or 'regression'")
     
-    def _euclidean_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
+    def _euclidean_distance(self, x: np.ndarray) -> float:
         """
         Calculates the euclidean distance between two data points.
         
@@ -114,10 +115,10 @@ class KNN:
         Returns:
             float: The euclidean distance between the two data points.
         """
-        return np.sqrt(np.sum((x1 - x2) ** 2))
+        return np.sqrt(np.sum((self.X - x) ** 2, axis=1))
     
     def __repr__(self) -> str:
-        return f'KNN(k={self.k})'
+        return f'KNN(k={self.k}, mode={self.mode})'
     
     def __str__(self) -> str:
-        return f'KNN(k={self.k})'
+        return f'KNN(k={self.k}, mode={self.mode})'
