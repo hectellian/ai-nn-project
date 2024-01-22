@@ -9,6 +9,7 @@ from joblib import Parallel, delayed
 from ai_nn_project.models.neigbours.knn import KNN
 from ai_nn_project.utils.activations import ReLU, Sigmoid
 from ai_nn_project.models.neuronal_network.multilayer_perceptron import MLP
+from ai_nn_project.utils.evaluations import (mse_loss, precision, recall, f1_score, accuracy, mae_loss, mape_loss, rmse_loss, r2_score)
 
 
 def worker_knn(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, scoring_func: callable, fixed_params: dict) -> tuple:
