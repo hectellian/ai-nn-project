@@ -1,3 +1,60 @@
+#!/usr/bin/env python3
+"""
+Tuning Module
+=============
+
+This module provides an implementation of grid search for hyperparameter tuning of models.
+
+Classes:
+    None
+    
+Functions:
+    worker_knn: Worker function for KNN grid search to be used with parallel processing.
+    worker_mlp: Worker function for MLP grid search to be used with parallel processing.
+    parallel_grid_search_knn: Performs parallel grid search on the KNN model.
+    parallel_grid_search_mlp: Performs parallel grid search on the MLP model.
+    grid_search_knn: Performs grid search on the KNN model.
+    grid_search_mlp: Performs grid search on the MLP model.
+    
+Usage:
+    This module is intended to be used as part of the ai_nn_project, specifically within the module. The grid search functions can be used to perform hyperparameter tuning on suitable models.
+    
+Example:
+    from ai_nn_project.utils.tuning import grid_search_knn
+    grid_search_knn(mse_loss, X_train, y_train, X_val, y_val, {'k': [1, 3, 5, 7, 9]})  # {'k': 3}, 0.5, [(params, score, time), ...]
+    
+Notes:
+    - The module is part of the ai_nn_project and follows its coding standards and architectural design.
+
+License:
+    MIT License
+    
+Author:
+    Anthony Christoforou
+    anthony.christoforou@etu.unige.ch
+    
+    Nathan Soufiane Vanson
+    nathan.vanson@etu.unige.ch
+    
+    Christian William
+    christian.william@etu.unige.ch
+    
+    Mohammed Massi Rashidi
+    mohammed.rashidi@etu.unige.ch
+    
+References:
+    - https://en.wikipedia.org/wiki/Hyperparameter_optimization
+    - https://en.wikipedia.org/wiki/Parallel_computing
+    
+Last Modified:
+    25.01.2024
+    
+See Also:
+    - ai_nn_project.models.neigbours.knn
+    - ai_nn_project.models.neuronal_network.multilayer_perceptron
+    - ai_nn_project.utils.activations
+"""
+
 # Libraries
 import time
 import numpy as np
@@ -9,9 +66,8 @@ from joblib import Parallel, delayed
 from ai_nn_project.models.neigbours.knn import KNN
 from ai_nn_project.utils.activations import ReLU, Sigmoid
 from ai_nn_project.models.neuronal_network.multilayer_perceptron import MLP
-from ai_nn_project.utils.evaluations import (mse_loss, precision, recall, f1_score, accuracy, mae_loss, mape_loss, rmse_loss, r2_score)
 
-
+# Code
 def worker_knn(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, scoring_func: callable, fixed_params: dict) -> tuple:
     """
     Worker function for KNN grid search to be used with parallel processing.
