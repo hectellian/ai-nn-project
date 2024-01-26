@@ -112,7 +112,8 @@ def mape_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     Returns:
         numpy.ndarray: The MAPE loss.
     """
-    return np.abs((y_true - y_pred) / y_true).mean()
+    epsilon = 1e-10  # Small constant
+    return np.mean(np.abs((y_true - y_pred) / (y_true + epsilon)))
 
 def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """Computes R2 Score.
@@ -124,9 +125,28 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     Returns:
         numpy.ndarray: The R2 score.
     """
-    return 1 - ((y_true - y_pred) ** 2).sum() / ((y_true - y_true.mean()) ** 2).sum()
+    denominator = ((y_true - y_true.mean()) ** 2).sum()
+    if denominator == 0:
+        # Handle the zero variance case
+        return 0  # or some other appropriate value or handling
+    return 1 - ((y_true - y_pred) ** 2).sum() / denominator
 
 # --- Classifications --- 
+def cross_entropy_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """Computes Binaey Cross Entropy Loss.
+    
+    Args:
+        y_true (numpy.ndarray): The true values.
+        y_pred (numpy.ndarray): The predicted values.
+        
+    Returns:
+        numpy.ndarray: The cross entropy loss.
+    """
+    epsilon = 1e-15
+    y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+    return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+
+
 def precision(y_true, y_pred) -> float:
     """
     Calculate the precision of the predictions.
