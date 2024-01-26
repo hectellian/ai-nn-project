@@ -106,7 +106,7 @@ def worker_mlp(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np
     """
     params['activation_objects'] = [ReLU() for _ in range(len(params['layer_sizes']) - 2)] + [fixed_params['final_activation']]
     model = MLP(**params)
-    metrics = model.fit(X_train, y_train, X_val, y_val, early_stopping_rounds=5, verbose=False)
+    metrics = model.fit(X_train, y_train, X_val, y_val, early_stopping_rounds=10, verbose=False)
     score = model.evaluate(X_val, y_val)
     return params, score, metrics
 

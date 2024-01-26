@@ -220,9 +220,12 @@ class MLP:
             raise ValueError("Input layer size does not match the number of features in training data.")
 
         metrics = []
-        best_validation_loss = np.inf
-        for epoch in tqdm(range(self.epochs), desc='Training Progress', leave=False):
-            epoch_metrics = {'accuracy': [], 'mse_loss': [], 'mae_loss': [], 'mape_loss': [], 'r2_score': [], 'cross_entropy_loss': [], 'precision': [], 'recall': [], 'f1_score': []}
+        best_validation_loss = float('inf')
+        best_model_state = None
+        no_improvement_count = 0
+        
+        for epoch in tqdm(range(self.epochs), desc='Training Progress', disable=not verbose):
+            epoch_metrics = {'accuracy': [], 'mse_loss': [], 'mae_loss': [], 'mape_loss': [], 'r2_score': []} if self.task_type == "regression" else {'cross_entropy_loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1_score': []}
 
             # Shuffle the data at the beginning of each epoch
             indices = np.arange(training_data.shape[0])
@@ -274,11 +277,11 @@ class MLP:
                             print(f"Early stopping at epoch {epoch + 1}")
                         break
 
-        # Compute average metrics for the epoch
-        avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}
-        if verbose:
-            print(f"Epoch {epoch + 1}/{self.epochs} - {avg_epoch_metrics}")
-        metrics.append(avg_epoch_metrics)
+            # Compute average metrics for the epoch
+            avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}
+            if verbose:
+                print(f"Epoch {epoch + 1}/{self.epochs} - {avg_epoch_metrics}")
+            metrics.append(avg_epoch_metrics)
 
         return metrics
 
