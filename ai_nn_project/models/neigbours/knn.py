@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 K-Nearest Neighbors (KNN) Module
-===============================
+================================
 
 This module provides an implementation of the K-Nearest Neighbors (KNN) algorithm for classification tasks.
 
@@ -28,18 +28,30 @@ License:
 Author:
     Anthony Christoforou
     anthony.christoforou@etu.unige.ch
+    
+    Nathan Soufiane Vanson
+    nathan.vanson@etu.unige.ch
+    
+    Christian William
+    christian.william@etu.unige.ch
+    
+    Mohammed Massi Rashidi
+    mohammed.rashidi@etu.unige.ch
 
 References:
     - Cover, T., & Hart, P. (1967). Nearest neighbor pattern classification. IEEE Transactions on Information Theory, 13(1), 21-27.
+    - https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm
     - https://scikit-learn.org/stable/modules/neighbors.html
 
 Last Modified:
-    13.01.2024
+    25.01.2024
 """
 
 # Libraries Imports
 import numpy as np
 from joblib import Parallel, delayed
+
+# Code
 class KNN:
     """
     A simple K-Nearest Neighbors (KNN) model for classification.
@@ -118,7 +130,19 @@ class KNN:
         return np.sqrt(np.sum((self.X - x) ** 2, axis=1))
     
     def __repr__(self) -> str:
+        """
+        Returns a string representation of the KNN.
+
+        Returns:
+            str: A string representation of the KNN.
+        """
         return f'KNN(k={self.k}, mode={self.mode})'
     
     def __str__(self) -> str:
+        """
+        Returns a string representation of the KNN.
+
+        Returns:
+            str: A string representation of the KNN.
+        """
         return f'KNN(k={self.k}, mode={self.mode})'

@@ -2,7 +2,7 @@
 name = "ai_nn_project"
 version = "0.1.0"
 description = ""
-authors = ["Anthony Christoforou <anthony.christoforou@etu.unige.ch>"]
+authors = ["Anthony Phillipe Christoforou <anthony.christoforou@etu.unige.ch>", "Nathan Soufiane Vanson <nathan.vanson@etu.unige.ch>", "Christian William <christian.willaim@etu.unige.ch>", "Mohammed Massi Rashidi <mohammed.rashidi@etu.unige.ch>"]
 license = "MIT License"
 readme = "README.md"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Multilayer Perceptron Module
-=================
+============================
 
 This module provides an implementation of a Multi-Layer Perceptron (MLP), a class of feedforward artificial neural network. It is designed for binary classification tasks and includes various utility functions for activation and loss calculation.
 
@@ -9,7 +9,7 @@ Classes:
     MLP: Represents a Multi-Layer Perceptron (MLP) neural network for binary classification.
 
 Functions:
-    mse_loss: Computes Mean Squared Error Loss.
+    None
 
 Usage:
     This module is intended to be used as part of the ai_nn_project, specifically within the neuronal classifiers. The MLP class can be used to perform binary classification tasks on suitable datasets.
@@ -25,18 +25,29 @@ License:
     MIT License
 
 Author:
-    Anthony Christoforou 
+    Anthony Christoforou
     anthony.christoforou@etu.unige.ch
+    
+    Nathan Soufiane Vanson
+    nathan.vanson@etu.unige.ch
+    
+    Christian William
+    christian.william@etu.unige.ch
+    
+    Mohammed Massi Rashidi
+    mohammed.rashidi@etu.unige.ch
 
 References:
     - F. Rosenblatt, "The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain", Cornell Aeronautical Laboratory, 1957.
+    - https://en.wikipedia.org/wiki/Multilayer_perceptron
     - https://github.com/scikit-learn/scikit-learn/blob/3f89022fa/sklearn/linear_model/_perceptron.py#L9
 
 Last Modified:
-    02.01.2024
-
+    25.01.2024
+    
 See Also:
-    - ai_nn_project.models.classifiers.linear.perceptron
+    - ai_nn_project.utils.activations
+    - ai_nn_project.utils.evaluations
 """
 
 # Library Imports
@@ -45,10 +56,11 @@ from tqdm.notebook import tqdm
 
 # Module Imports
 from ai_nn_project.utils.activations import ActivationFunction
-from ai_nn_project.utils.evaluations import mse_loss, precision, recall, f1_score, accuracy
+from ai_nn_project.utils.evaluations import mse_loss
 
 MAX_NORM = 1e-8  # Maximum norm for gradient clipping
 
+# Code
 class MLP:
     """
     A simple Multi-Layer Perceptron (MLP) neural network for binary classification.

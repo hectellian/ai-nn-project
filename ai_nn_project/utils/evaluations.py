@@ -1,7 +1,71 @@
+#!/usr/bin/env python3
+"""
+Evaluations Module
+==================
+
+This module provides an implementation of various evaluation metrics used in machine learning.
+
+Classes:
+    None
+    
+Functions:
+    mse_loss: Computes Mean Squared Error Loss.
+    rmse_loss: Computes Root Mean Squared Error Loss.
+    mae_loss: Computes Mean Absolute Error Loss.
+    mape_loss: Computes Mean Absolute Percentage Error Loss.
+    r2_score: Computes R2 Score.
+    precision: Calculate the precision of the predictions.
+    recall: Calculate the recall of the predictions.
+    f1_score: Calculate the F1 score of the predictions.
+    accuracy: Calculate the accuracy of the predictions.
+    
+Usage:
+    This module is intended to be used as part of the ai_nn_project, specifically within the neuronal classifiers. The evaluation functions can be used to evaluate the performance of a model on a dataset.
+
+Example:
+    from ai_nn_project.utils.evaluations import mse_loss
+    mse_loss(y_true, y_pred)  # 0.5
+
+Notes:
+    - The module is part of the ai_nn_project and follows its coding standards and architectural design.
+    
+License:
+    MIT License
+    
+Author:
+    Anthony Christoforou
+    anthony.christoforou@etu.unige.ch
+    
+    Nathan Soufiane Vanson
+    nathan.vanson@etu.unige.ch
+    
+    Christian William
+    christian.william@etu.unige.ch
+    
+    Mohammed Massi Rashidi
+    mohammed.rashidi@etu.unige.ch
+    
+References:
+    - https://en.wikipedia.org/wiki/Mean_squared_error
+    - https://en.wikipedia.org/wiki/Mean_absolute_error
+    - https://en.wikipedia.org/wiki/Mean_absolute_percentage_error
+    - https://en.wikipedia.org/wiki/Coefficient_of_determination
+    - https://en.wikipedia.org/wiki/Precision_and_recall
+    - https://en.wikipedia.org/wiki/F-score
+    - https://en.wikipedia.org/wiki/Accuracy_and_precision
+    
+Last Modified:
+    25.01.2024
+    
+See Also:
+    - ai_nn_project.models.neuronal_network.multilayer_perceptron
+"""
+
 # Libraries Imports
 import numpy as np
 
-# regression
+# Code
+# --- Regression ---
 def mse_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """Computes Mean Squared Error Loss.
     
@@ -62,8 +126,8 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     """
     return 1 - ((y_true - y_pred) ** 2).sum() / ((y_true - y_true.mean()) ** 2).sum()
 
-# classifications
-def precision(y_true, y_pred):
+# --- Classifications --- 
+def precision(y_true, y_pred) -> float:
     """
     Calculate the precision of the predictions.
 
@@ -82,7 +146,7 @@ def precision(y_true, y_pred):
     return true_positives / predicted_positives if predicted_positives > 0 else 0
 
 
-def recall(y_true, y_pred):
+def recall(y_true, y_pred) -> float:
     """
     Calculate the recall of the predictions.
 
@@ -100,7 +164,7 @@ def recall(y_true, y_pred):
     actual_positives = np.sum(y_true == 1)
     return true_positives / actual_positives if actual_positives > 0 else 0
 
-def f1_score(y_true, y_pred):
+def f1_score(y_true, y_pred) -> float:
     """
     Calculate the F1 score of the predictions.
 
@@ -118,7 +182,7 @@ def f1_score(y_true, y_pred):
     rec = recall(y_true, y_pred)
     return 2 * (prec * rec) / (prec + rec) if (prec + rec) > 0 else 0
 
-def accuracy(y_true, y_pred):
+def accuracy(y_true, y_pred) -> float:
     """
     Calculate the accuracy of the predictions.
 
