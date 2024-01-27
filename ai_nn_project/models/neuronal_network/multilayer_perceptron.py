@@ -58,7 +58,7 @@ from tqdm.notebook import tqdm
 from ai_nn_project.utils.activations import ActivationFunction, Sigmoid, ReLU, Linear
 from ai_nn_project.utils.evaluations import mse_loss, cross_entropy_loss, accuracy, precision, recall, f1_score, r2_score, mae_loss, mape_loss
 
-MAX_NORM = 1e-8  # Maximum norm for gradient clipping
+MAX_NORM = 1  # Maximum norm for gradient clipping
 
 # Code
 class MLP:
@@ -101,11 +101,7 @@ class MLP:
         Returns:
             str: The task type.
         """
-        # Example logic to determine the task type
-        if isinstance(self.activation_objects[-1], Sigmoid):
-            return "classification"
-        else:
-            return "regression"
+        return "classification" if isinstance(self.activation_objects[-1], Sigmoid) else "regression"
 
     def forward(self, input_data: np.ndarray) -> tuple[np.ndarray, list]:
         """
@@ -123,7 +119,7 @@ class MLP:
             activations.append(activation.activate(z))
         return activations[-1], activations
 
-    def compute_loss_derivative(self, output, target):
+    def compute_loss_derivative(self, output: np.ndarray, target: np.ndarray) -> np.ndarray:
         """
         Computes the derivative of the loss function with respect to the output.
 
@@ -134,17 +130,9 @@ class MLP:
         Returns:
             numpy.ndarray: The derivative of the loss function with respect to the output.
         """
-        if self.task_type == "regression":
-            return output - target
-        elif self.task_type == "classification":
-            # Assuming binary classification with a sigmoid activation
-            epsilon = 1e-15
-            output = np.clip(output, epsilon, 1 - epsilon)
-            return (output - target) / (output * (1 - output))
-        else:
-            raise ValueError("Unknown task type")
+        return output - target
         
-    def evaluate(self, input_data: np.ndarray, labels: np.ndarray) -> dict[str, float]:
+    def evaluate(self, input_data: np.ndarray, labels: np.ndarray) -> float:
         """
         Evaluates the model on the provided data and labels.
 
@@ -153,7 +141,7 @@ class MLP:
             labels (numpy.ndarray): The target labels.
 
         Returns:
-            dict[str, float]: A dictionary containing the metrics.
+            floa: The loss value.
         """
         output, _ = self.forward(input_data.T)
         if self.task_type == "regression":
@@ -251,7 +239,7 @@ class MLP:
                 epoch_metrics['mape_loss'].append(mape_loss(batch_labels, output.T))
                 epoch_metrics['r2_score'].append(r2_score(batch_labels, output.T))
             elif self.task_type == "classification":
-                output = np.where(output > 0.5, 1, 0)
+                output = np.where(output >= 0.5, 1, 0)
                 epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(batch_labels, output.T))
                 epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
                 epoch_metrics['precision'].append(precision(batch_labels, output.T))
@@ -287,7 +275,7 @@ class MLP:
 
     def get_state(self):
         # Assuming weights and biases are stored in lists self.weights and self.biases
-        return {'weights': self.weights.copy(), 'biases': self.biases.copy()}
+        return {'weights': [w.copy() for w in self.weights], 'biases': [b.copy() for b in self.biases]}
 
     def set_state(self, state):
         self.weights = state['weights']

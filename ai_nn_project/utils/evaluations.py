@@ -133,7 +133,7 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
 
 # --- Classifications --- 
 def cross_entropy_loss(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
-    """Computes Binaey Cross Entropy Loss.
+    """Computes Binary Cross Entropy Loss.
     
     Args:
         y_true (numpy.ndarray): The true values.
