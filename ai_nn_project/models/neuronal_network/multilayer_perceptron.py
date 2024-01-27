@@ -240,8 +240,8 @@ class MLP:
                 epoch_metrics['r2_score'].append(r2_score(batch_labels, output.T))
             elif self.task_type == "classification":
                 output = np.where(output >= 0.5, 1, 0)
-                epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(batch_labels, output.T))
                 epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
+                epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(batch_labels, output.T))
                 epoch_metrics['precision'].append(precision(batch_labels, output.T))
                 epoch_metrics['recall'].append(recall(batch_labels, output.T))
                 epoch_metrics['f1_score'].append(f1_score(batch_labels, output.T))

@@ -49,6 +49,7 @@ See Also:
 
 # Libraries Imports
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 # Module Imports
 from ai_nn_project.models.neuronal_network.multilayer_perceptron import MLP
@@ -64,18 +65,21 @@ def visualize_weights(network: MLP, title: str = None) -> None:
     """
     num_layers = len(network.weights)
     
-    # Create a figure with subplots for each weight matrix
-    fig, axes = plt.subplots(1, num_layers, figsize=(40, 10))
+    # Adjust for networks with a single layer
+    if num_layers == 1:
+        fig, ax = plt.subplots(figsize=(10, 10))
+        axes = [ax]
+    else:
+        fig, axes = plt.subplots(1, num_layers, figsize=(num_layers * 10, 10))
     
-    # Set the title if provided
     if title:
         fig.suptitle(title)
     
     for i, weight_matrix in enumerate(network.weights):
-        ax = axes[i]
+        ax = axes if num_layers == 1 else axes[i]
+        cax = ax.matshow(weight_matrix, cmap='viridis')
         ax.set_title(f'Layer {i} Weights')
-        ax.matshow(weight_matrix, cmap='viridis')  # You can change the colormap as desired
-        fig.colorbar(ax.matshow(weight_matrix, cmap='viridis'), ax=ax)
+        fig.colorbar(cax, ax=ax)
     
     plt.show()
     
@@ -131,16 +135,21 @@ def plot_metrics_by_epochs(metrics_list: list[dict[str, float]], title: str = 'P
     Returns:
         None
     """
-    epochs = [i for i in range(len(metrics_list))]
-    
-    plt.figure(figsize=(40, 8))
-    for metric, scores in metrics_list[0].items():
-        plt.plot(epochs, [metric['accuracy'] for metric in metrics_list], marker='o', linestyle='-', label=metric)
-    plt.xlabel('Epochs')
-    plt.ylabel('Score')
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
+    num_metrics = len(metrics_list[0])
+    fig, axes = plt.subplots(num_metrics, 1, figsize=(40, 8 * num_metrics))
+    fig.suptitle(title)
+
+    for i, metric in enumerate(metrics_list[0].keys()):
+        values = [metrics[metric] for metrics in metrics_list]
+        ax = axes[i]
+        ax.plot(values, label=metric)
+        ax.set_title(metric)
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Metric Score')
+        ax.legend()
+        ax.grid(True)
+
+    plt.tight_layout(pad=3.0)
     plt.show()
 
 # Function to plot performance metrics as a function of training dataset size
@@ -167,8 +176,6 @@ def plot_metrics_by_dataset_size(sizes: list, scores: dict[str, float], title: s
     plt.grid(True)
     plt.show()
     
-
-# Function to plot performance metrics by network complexity (layer sizes)
 def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]], title: str = 'Performance by Network Complexity') -> None:
     """
     Plots performance metrics as a function of network complexity (layer sizes).
@@ -190,7 +197,7 @@ def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float
         
         # Extract accuracy from the last entry in the metrics list as an example
         # You might want to adjust this to use a different metric or a different method (e.g., averaging)
-        accuracy = metrics_list[-1]['accuracy']  # Assuming 'accuracy' is always present
+        accuracy = metrics_list[-1]['accuracy']
         accuracies.append(accuracy)
 
     # Plotting
@@ -202,34 +209,60 @@ def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float
     plt.grid(True)
     plt.show()
     
-def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]], title: str = 'Accuracy During Training by Pruning Level') -> None:
+def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]], title: str = 'Accuracy During Training by Layer Size') -> None:
     """
-    Plots the accuracy metric as it evolves during training for different pruning levels.
+    Plots the accuracy metric as it evolves during training based on the complexity of the network.
     
     Args:
         results (list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]]): 
-            List containing tuples of hyperparameters (including pruning level), score, and metrics over training epochs.
+            List containing tuples of hyperparameters, score, and metrics over training epochs.
         title (str): Optional title for the visualization.
         
     Returns:
         None
     """
-    plt.figure(figsize=(40, 8))
+    fig, ax = plt.subplots(figsize=(40, 8))  # Create a figure and a set of subplots
+    cmap = plt.get_cmap('viridis')
 
-    # Loop through each result to plot accuracy over epochs for different pruning levels
+    complexities = [sum(hp['layer_sizes']) for hp, _, _ in results]
+    norm = mcolors.Normalize(vmin=min(complexities), vmax=max(complexities))
+
     for hyperparams, _, metrics_list in results:
-        pruning_level = hyperparams.get('pruning_level', 0)  # Default to 0 if not present
-        accuracies = [metric['accuracy'] for metric in metrics_list if 'accuracy' in metric]  # Extract accuracies
+        complexity = sum(hyperparams['layer_sizes'])
+        accuracies = [metrics['accuracy'] for metrics in metrics_list]
+        line, = ax.plot(accuracies, color=cmap(norm(complexity)))
 
-        # Plot accuracy over epochs/steps
-        plt.plot(accuracies, label=f'Pruning Level {pruning_level}%')
+        # Determine the epoch where training stopped
+        final_epoch = len(accuracies)
 
-    plt.title(title)
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.grid(True)
+        # Draw a vertical line at the stopping epoch
+        # Use a different style or color if stopping was due to pruning
+        if final_epoch < hyperparams['epochs']:  # Assuming 'epochs' is a key in hyperparams
+            # Pruning occurred
+            ax.axvline(x=final_epoch, color=line.get_color(), linestyle='--', linewidth=1, label='Pruning at Epoch {}'.format(final_epoch))
+        else:
+            # Reached max epochs
+            ax.axvline(x=final_epoch, color=line.get_color(), linestyle='-', linewidth=1, label='Max Epochs at {}'.format(final_epoch))
+
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, aspect=10)
+    cbar.set_label('Network Complexity')
+
+    ax.set_title(title)
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Accuracy')
+    ax.grid(True)
+
+    # Optional: Create a custom legend to explain the vertical lines
+    # This part can be customized or omitted based on your preferences
+    from matplotlib.lines import Line2D
+    custom_lines = [Line2D([0], [0], color='gray', linestyle='--', linewidth=1),
+                    Line2D([0], [0], color='gray', linestyle='-', linewidth=1)]
+    ax.legend(custom_lines, ['Pruning', 'Reached Max Epochs'])
+
     plt.show()
-# Function to plot performance metrics by noise level
+    
 def plot_metrics_by_noise(noise_levels: list[float], scores: dict[str, float], title='Performance by Noise Level') -> None:
     """
     Plots performance metrics as a function of noise level.
@@ -245,7 +278,6 @@ def plot_metrics_by_noise(noise_levels: list[float], scores: dict[str, float], t
     # the score dict is of the form {metric: [score1, score2, ...]}
     plt.figure(figsize=(40, 8))
     for metric, scores in scores.items():
-        print(scores)
         plt.plot(noise_levels, scores, marker='o', linestyle='-', label=metric)
     plt.xlabel('Noise Level')
     plt.ylabel('Score')
