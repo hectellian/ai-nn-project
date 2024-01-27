@@ -20,6 +20,7 @@ ipykernel = "^6.28.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.28.0"
+pandas = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core"]

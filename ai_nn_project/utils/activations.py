@@ -104,6 +104,7 @@ class Sigmoid(ActivationFunction):
         Returns:
             np.ndarray: Output vector - Sigmoid.
         """
+        z = np.clip(z, -500, 500)
         return 1 / (1 + np.exp(-z))
     
     @staticmethod

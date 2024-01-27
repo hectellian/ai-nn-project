@@ -55,8 +55,8 @@ import numpy as np
 from tqdm.notebook import tqdm
 
 # Module Imports
-from ai_nn_project.utils.activations import ActivationFunction
-from ai_nn_project.utils.evaluations import mse_loss
+from ai_nn_project.utils.activations import ActivationFunction, Sigmoid, ReLU, Linear
+from ai_nn_project.utils.evaluations import mse_loss, cross_entropy_loss, accuracy, precision, recall, f1_score, r2_score, mae_loss, mape_loss
 
 MAX_NORM = 1e-8  # Maximum norm for gradient clipping
 
@@ -78,7 +78,7 @@ class MLP:
         Args:
             layer_sizes (list): A list containing the number of neurons in each layer.
             activation_func (callable, optional): The activation function to use. Defaults to sigmoid.
-        """
+        """    
         self.layer_sizes = layer_sizes
         
         if activation_objects is None:
@@ -91,6 +91,21 @@ class MLP:
         
         self.weights = [np.random.randn(y, x) * np.sqrt(2. / x) for x, y in zip(layer_sizes[:-1], layer_sizes[1:])] # Initialize weights with He initialization
         self.biases = [np.random.randn(y, 1) for y in layer_sizes[1:]]
+        
+        self.task_type = self._determine_task_type()
+        
+    def _determine_task_type(self) -> str:
+        """
+        Determines the task type based on the output activation function.
+        
+        Returns:
+            str: The task type.
+        """
+        # Example logic to determine the task type
+        if isinstance(self.activation_objects[-1], Sigmoid):
+            return "classification"
+        else:
+            return "regression"
 
     def forward(self, input_data: np.ndarray) -> tuple[np.ndarray, list]:
         """
@@ -119,7 +134,37 @@ class MLP:
         Returns:
             numpy.ndarray: The derivative of the loss function with respect to the output.
         """
-        return output - target
+        if self.task_type == "regression":
+            return output - target
+        elif self.task_type == "classification":
+            # Assuming binary classification with a sigmoid activation
+            epsilon = 1e-15
+            output = np.clip(output, epsilon, 1 - epsilon)
+            return (output - target) / (output * (1 - output))
+        else:
+            raise ValueError("Unknown task type")
+        
+    def evaluate(self, input_data: np.ndarray, labels: np.ndarray) -> dict[str, float]:
+        """
+        Evaluates the model on the provided data and labels.
+
+        Args:
+            input_data (numpy.ndarray): The input data.
+            labels (numpy.ndarray): The target labels.
+
+        Returns:
+            dict[str, float]: A dictionary containing the metrics.
+        """
+        output, _ = self.forward(input_data.T)
+        if self.task_type == "regression":
+            output = np.round(output)
+            return mse_loss(labels, output.T)
+        elif self.task_type == "classification":
+            output = np.where(output >= 0.5, 1, 0)
+            return cross_entropy_loss(labels, output.T)
+        else:
+            raise ValueError("Unknown task type")
+        
 
     def backward(self, output: np.ndarray, target: np.ndarray, activations: list) -> None:
         """
@@ -155,13 +200,16 @@ class MLP:
             if i > 0:
                 error = np.dot(self.weights[i].T, delta)
 
-    def fit(self, training_data: np.ndarray, labels: np.ndarray, verbose: bool = False) -> list[dict[str, float]]:
+    def fit(self, training_data: np.ndarray, labels: np.ndarray, validation_data: np.ndarray | None = None, validation_labels: np.ndarray | None = None, early_stopping_rounds: int = 5, verbose: bool = False) -> list[dict[str, float]]:
         """
         Trains the neural network using the provided training data and labels.
 
         Args:
             training_data (np.ndarray): The training data.
             labels (np.ndarray): The training labels.
+            validation_data (np.ndarray, optional): The validation data. Defaults to None.
+            validation_labels (np.ndarray, optional): The validation labels. Defaults to None.
+            early_stopping_rounds (int, optional): The number of rounds to wait for validation loss to improve before stopping. Defaults to 5.
             verbose (bool): If True, prints verbose output. Default is False.
             
         Returns:
@@ -172,8 +220,12 @@ class MLP:
             raise ValueError("Input layer size does not match the number of features in training data.")
 
         metrics = []
-        for epoch in tqdm(range(self.epochs), desc='Training Progress', leave=False):
-            epoch_metrics = {'mse_loss': []}
+        best_validation_loss = float('inf')
+        best_model_state = None
+        no_improvement_count = 0
+        
+        for epoch in tqdm(range(self.epochs), desc='Training Progress', disable=not verbose):
+            epoch_metrics = {'accuracy': [], 'mse_loss': [], 'mae_loss': [], 'mape_loss': [], 'r2_score': []} if self.task_type == "regression" else {'cross_entropy_loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1_score': []}
 
             # Shuffle the data at the beginning of each epoch
             indices = np.arange(training_data.shape[0])
@@ -189,8 +241,41 @@ class MLP:
                 output, activations = self.forward(batch_data)
                 self.backward(output, batch_labels, activations)
 
-                # Convert output to binary predictions and calculate metrics
+            # Calculate metrics
+            output, _ = self.forward(training_data.T)
+            if self.task_type == "regression":
+                output = np.round(output)
+                epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
                 epoch_metrics['mse_loss'].append(mse_loss(batch_labels, output.T))
+                epoch_metrics['mae_loss'].append(mae_loss(batch_labels, output.T))
+                epoch_metrics['mape_loss'].append(mape_loss(batch_labels, output.T))
+                epoch_metrics['r2_score'].append(r2_score(batch_labels, output.T))
+            elif self.task_type == "classification":
+                output = np.where(output > 0.5, 1, 0)
+                epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(batch_labels, output.T))
+                epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
+                epoch_metrics['precision'].append(precision(batch_labels, output.T))
+                epoch_metrics['recall'].append(recall(batch_labels, output.T))
+                epoch_metrics['f1_score'].append(f1_score(batch_labels, output.T))
+            else:
+                raise ValueError("Unknown task type")
+            
+            # Early stopping        
+            if validation_data is not None and validation_labels is not None:
+                validation_loss = self.evaluate(validation_data, validation_labels)
+                if verbose:
+                    print(f"Epoch {epoch + 1}/{self.epochs} - Validation loss: {validation_loss}")
+                if validation_loss < best_validation_loss:
+                    best_validation_loss = validation_loss
+                    best_model_state = self.get_state()
+                    no_improvement_count = 0
+                else:
+                    no_improvement_count += 1
+                    if no_improvement_count >= early_stopping_rounds:
+                        self.set_state(best_model_state)
+                        if verbose:
+                            print(f"Early stopping at epoch {epoch + 1}")
+                        break
 
             # Compute average metrics for the epoch
             avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}
@@ -200,6 +285,13 @@ class MLP:
 
         return metrics
 
+    def get_state(self):
+        # Assuming weights and biases are stored in lists self.weights and self.biases
+        return {'weights': self.weights.copy(), 'biases': self.biases.copy()}
+
+    def set_state(self, state):
+        self.weights = state['weights']
+        self.biases = state['biases']
 
     def predict(self, input_data: np.ndarray) -> np.ndarray:
         """

@@ -90,7 +90,7 @@ def worker_knn(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np
     end_time = time.time()
     return params, score, end_time - start_time
 
-def worker_mlp(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, scoring_func: callable, fixed_params: dict) -> tuple:
+def worker_mlp(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, fixed_params: dict) -> tuple:
     """
     Worker function for MLP grid search to be used with parallel processing.
 
@@ -106,13 +106,9 @@ def worker_mlp(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np
     """
     params['activation_objects'] = [ReLU() for _ in range(len(params['layer_sizes']) - 2)] + [fixed_params['final_activation']]
     model = MLP(**params)
-    start_time = time.time()
-    model.fit(X_train, y_train)
-    output = model.predict(X_val.T)
-    formatted_output = np.where(output >= 0.5, 1, 0) if isinstance(fixed_params['final_activation'], Sigmoid) else np.round(output)
-    score = scoring_func(y_val, formatted_output.T)
-    end_time = time.time()
-    return params, score, end_time - start_time
+    metrics = model.fit(X_train, y_train, X_val, y_val, early_stopping_rounds=10, verbose=False)
+    score = model.evaluate(X_val, y_val)
+    return params, score, metrics
 
 def parallel_grid_search_knn(scoring_func: callable, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, param_grid: dict, fixed_params: dict = {}, n_jobs: int = -1) -> tuple:
     """
@@ -141,7 +137,7 @@ def parallel_grid_search_knn(scoring_func: callable, X_train: np.ndarray, y_trai
 
     return best_params, best_score, results
 
-def parallel_grid_search_mlp(scoring_func: callable, X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, param_grid: dict, fixed_params: dict = {}, n_jobs: int = -1) -> tuple:
+def parallel_grid_search_mlp(X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray, param_grid: dict, fixed_params: dict = {}, n_jobs: int = -1) -> tuple:
     """
     Performs parallel grid search on the MLP model.
     
@@ -157,12 +153,12 @@ def parallel_grid_search_mlp(scoring_func: callable, X_train: np.ndarray, y_trai
         tuple: Best parameters, best score, and a list of results.
     """
     param_combinations = [dict(zip(param_grid.keys(), params)) for params in product(*param_grid.values())]
-    results = Parallel(n_jobs=n_jobs)(delayed(worker_mlp)(params, X_train, y_train, X_val, y_val, scoring_func, fixed_params) for params in tqdm(param_combinations, desc="MLP Grid Search"))
+    results = Parallel(n_jobs=n_jobs)(delayed(worker_mlp)(params, X_train, y_train, X_val, y_val, fixed_params) for params in tqdm(param_combinations, desc="MLP Grid Search"))
 
     best_params = None
-    best_score = -1
+    best_score = float('inf')
     for params, score, _ in results:
-        if score > best_score:
+        if score < best_score:
             best_score = score
             best_params = params
 
