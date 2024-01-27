@@ -124,32 +124,40 @@ def plot_metrics(metrics: dict[str, float], title: str = 'Performance Metrics') 
     plt.grid(True)
     plt.show()
     
-def plot_metrics_by_epochs(metrics_list: list[dict[str, float]], title: str = 'Performance by Epochs') -> None:
+def plot_metrics_by_epochs(metrics: dict[str, list[float]], title: str = 'Performance by Epochs') -> None:
     """
     Plots performance metrics as a function of training epochs.
     
     Args:
-        metrics_list (list[dict[str, float]]): List of dictionaries containing performance metrics and their corresponding scores.
+        metrics (dict[str, list[float]]): List of dictionaries containing performance metrics and their corresponding scores.
         title (str): Optional title for the visualization.
         
     Returns:
         None
     """
-    num_metrics = len(metrics_list[0])
-    fig, axes = plt.subplots(num_metrics, 1, figsize=(40, 8 * num_metrics))
-    fig.suptitle(title)
+    num_metrics = len(metrics)
+    fig, axes = plt.subplots(1, num_metrics, figsize=(10 * num_metrics, 8))  # Adjust width based on the number of metrics
 
-    for i, metric in enumerate(metrics_list[0].keys()):
-        values = [metrics[metric] for metrics in metrics_list]
-        ax = axes[i]
-        ax.plot(values, label=metric)
-        ax.set_title(metric)
+    # Ensure axes is an array even when there's only one metric
+    if num_metrics == 1:
+        axes = [axes]
+
+    # Extract epochs count from the first metric's list length
+    epochs = range(1, len(next(iter(metrics.values()))) + 1)
+
+    # Plot each metric in a separate subplot
+    for ax, (metric, values) in zip(axes, metrics.items()):
+        if not isinstance(values, list):
+            raise ValueError(f"Values for metric '{metric}' must be a list.")
+        ax.plot(epochs, values, label=metric)
         ax.set_xlabel('Epochs')
-        ax.set_ylabel('Metric Score')
+        ax.set_ylabel('Score')
+        ax.set_title(metric)
         ax.legend()
         ax.grid(True)
 
-    plt.tight_layout(pad=3.0)
+    plt.suptitle(title)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout to make room for the title
     plt.show()
 
 # Function to plot performance metrics as a function of training dataset size
@@ -175,14 +183,15 @@ def plot_metrics_by_dataset_size(sizes: list, scores: dict[str, float], title: s
     plt.legend()
     plt.grid(True)
     plt.show()
-    
-def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]], title: str = 'Performance by Network Complexity') -> None:
+
+def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float, dict[str, list[float | int]]]], title: str = 'Performance by Network Complexity') -> None:
     """
     Plots performance metrics as a function of network complexity (layer sizes).
     
     Args:
-        results (tuple[dict, list, dict]): Tuple containing the results of the complexity experiment.
-        title (str): Optional title for the visualization.
+        results: List of tuples containing the results of the complexity experiment. Each tuple consists of hyperparameters dictionary, 
+                 a float value (not used in this function), and a metrics dictionary with lists of metrics over epochs.
+        title: Title for the visualization.
         
     Returns:
         None
@@ -190,31 +199,30 @@ def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float
     complexities = []
     accuracies = []
 
-    for hyperparams, _, metrics_list in results:
-        # Calculate the complexity as the sum of neurons in all layers
-        complexity = sum(hyperparams['layer_sizes'])
+    for hyperparams, _, metrics_dict in results:
+        complexity = sum(hyperparams['layer_sizes'])  # Calculate total neurons
         complexities.append(complexity)
         
-        # Extract accuracy from the last entry in the metrics list as an example
-        # You might want to adjust this to use a different metric or a different method (e.g., averaging)
-        accuracy = metrics_list[-1]['accuracy']
+        # Assuming 'accuracy' is a list and we're interested in the final accuracy value
+        accuracy = metrics_dict['accuracy'][-1]  # Get the last accuracy value
         accuracies.append(accuracy)
 
     # Plotting
-    plt.figure(figsize=(40, 8))
+    plt.figure(figsize=(12, 6))  # Adjusted size for standard display
     plt.scatter(complexities, accuracies, alpha=0.6, color='blue')
     plt.title(title)
     plt.xlabel('Network Complexity (Total Neurons)')
     plt.ylabel('Accuracy')
     plt.grid(True)
     plt.show()
+
     
-def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]], title: str = 'Accuracy During Training by Layer Size') -> None:
+def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], float, dict[str, list[float | int]]]], title: str = 'Accuracy During Training by Layer Size') -> None:
     """
     Plots the accuracy metric as it evolves during training based on the complexity of the network.
     
     Args:
-        results (list[tuple[dict[str, float | int], float, list[dict[str, float | int]]]]): 
+        results (list[tuple[dict[str, float | int], float, dict[str, list[float | int]]]]): 
             List containing tuples of hyperparameters, score, and metrics over training epochs.
         title (str): Optional title for the visualization.
         
@@ -227,9 +235,9 @@ def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], fl
     complexities = [sum(hp['layer_sizes']) for hp, _, _ in results]
     norm = mcolors.Normalize(vmin=min(complexities), vmax=max(complexities))
 
-    for hyperparams, _, metrics_list in results:
+    for hyperparams, _, metrics in results:
         complexity = sum(hyperparams['layer_sizes'])
-        accuracies = [metrics['accuracy'] for metrics in metrics_list]
+        accuracies = metrics['accuracy']
         line, = ax.plot(accuracies, color=cmap(norm(complexity)))
 
         # Determine the epoch where training stopped
