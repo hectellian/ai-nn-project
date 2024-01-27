@@ -78,6 +78,70 @@ def visualize_weights(network: MLP, title: str = None) -> None:
         fig.colorbar(ax.matshow(weight_matrix, cmap='viridis'), ax=ax)
     
     plt.show()
+    
+def plot_accuracy(labels: list, predictions: list, title: str = 'Accuracy') -> None:
+    """
+    Plots the accuracy metric as it evolves during training.
+    
+    Args:
+        labels (list): List of labels.
+        predictions (list): List of predictions.
+        title (str): Optional title for the visualization.
+        
+    Returns:
+        None
+    """
+    plt.figure(figsize=(40, 8))
+    plt.plot(labels, label='Labels')
+    plt.plot(predictions, label='Predictions')
+    plt.title(title)
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    
+def plot_metrics(metrics: dict[str, float], title: str = 'Performance Metrics') -> None:
+    """
+    Plots performance metrics.
+    
+    Args:
+        metrics (dict[str, float]): Dictionary of performance metrics and their corresponding scores.
+        title (str): Optional title for the visualization.
+        
+    Returns:
+        None
+    """
+    plt.figure(figsize=(40, 8))
+    plt.bar(metrics.keys(), metrics.values())
+    plt.title(title)
+    plt.xlabel('Metrics')
+    plt.ylabel('Score')
+    plt.grid(True)
+    plt.show()
+    
+def plot_metrics_by_epochs(metrics_list: list[dict[str, float]], title: str = 'Performance by Epochs') -> None:
+    """
+    Plots performance metrics as a function of training epochs.
+    
+    Args:
+        metrics_list (list[dict[str, float]]): List of dictionaries containing performance metrics and their corresponding scores.
+        title (str): Optional title for the visualization.
+        
+    Returns:
+        None
+    """
+    epochs = [i for i in range(len(metrics_list))]
+    
+    plt.figure(figsize=(40, 8))
+    for metric, scores in metrics_list[0].items():
+        plt.plot(epochs, [metric['accuracy'] for metric in metrics_list], marker='o', linestyle='-', label=metric)
+    plt.xlabel('Epochs')
+    plt.ylabel('Score')
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 # Function to plot performance metrics as a function of training dataset size
 def plot_metrics_by_dataset_size(sizes: list, scores: dict[str, float], title: str = 'Performance by Dataset Size') -> None:
@@ -93,7 +157,7 @@ def plot_metrics_by_dataset_size(sizes: list, scores: dict[str, float], title: s
         None
     """
     # the score dict is of the form {metric: [score1, score2, ...]}
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(40, 8))
     for metric, scores in scores.items():
         plt.plot(sizes, scores, marker='o', linestyle='-', label=metric)
     plt.xlabel('Training Dataset Size')
@@ -130,7 +194,7 @@ def plot_metrics_by_complexity(results: list[tuple[dict[str, float | int], float
         accuracies.append(accuracy)
 
     # Plotting
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(40, 8))
     plt.scatter(complexities, accuracies, alpha=0.6, color='blue')
     plt.title(title)
     plt.xlabel('Network Complexity (Total Neurons)')
@@ -150,7 +214,7 @@ def plot_accuracy_during_training(results: list[tuple[dict[str, float | int], fl
     Returns:
         None
     """
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(40, 8))
 
     # Loop through each result to plot accuracy over epochs for different pruning levels
     for hyperparams, _, metrics_list in results:
@@ -179,7 +243,7 @@ def plot_metrics_by_noise(noise_levels: list[float], scores: dict[str, float], t
         None
     """
     # the score dict is of the form {metric: [score1, score2, ...]}
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(40, 8))
     for metric, scores in scores.items():
         print(scores)
         plt.plot(noise_levels, scores, marker='o', linestyle='-', label=metric)
