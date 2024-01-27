@@ -106,7 +106,7 @@ def worker_mlp(params: dict, X_train: np.ndarray, y_train: np.ndarray, X_val: np
     """
     params['activation_objects'] = [ReLU() for _ in range(len(params['layer_sizes']) - 2)] + [fixed_params['final_activation']]
     model = MLP(**params)
-    metrics = model.fit(X_train, y_train, X_val, y_val, early_stopping_rounds=15, verbose=False)
+    metrics = model.fit(X_train, y_train, X_val, y_val, early_stopping_rounds=10, verbose=False)
     score = model.evaluate(X_val, y_val)
     return params, score, metrics
 
@@ -156,9 +156,9 @@ def parallel_grid_search_mlp(X_train: np.ndarray, y_train: np.ndarray, X_val: np
     results = Parallel(n_jobs=n_jobs)(delayed(worker_mlp)(params, X_train, y_train, X_val, y_val, fixed_params) for params in tqdm(param_combinations, desc="MLP Grid Search"))
 
     best_params = None
-    best_score = -1
+    best_score = float('inf')
     for params, score, _ in results:
-        if score > best_score:
+        if score < best_score:
             best_score = score
             best_params = params
 
