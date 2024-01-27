@@ -188,7 +188,7 @@ class MLP:
             if i > 0:
                 error = np.dot(self.weights[i].T, delta)
 
-    def fit(self, training_data: np.ndarray, labels: np.ndarray, validation_data: np.ndarray | None = None, validation_labels: np.ndarray | None = None, early_stopping_rounds: int = 5, verbose: bool = False) -> list[dict[str, float]]:
+    def fit(self, training_data: np.ndarray, labels: np.ndarray, validation_data: np.ndarray, validation_labels: np.ndarray, early_stopping_rounds: int | None = None, verbose: bool = False) -> list[dict[str, float]]:
         """
         Trains the neural network using the provided training data and labels.
 
@@ -207,13 +207,12 @@ class MLP:
         if self.layer_sizes[0] != training_data.shape[1]:
             raise ValueError("Input layer size does not match the number of features in training data.")
 
-        metrics = []
         best_validation_loss = float('inf')
         best_model_state = None
         no_improvement_count = 0
         
+        epoch_metrics = {'accuracy': [], 'mse_loss': [], 'mae_loss': [], 'mape_loss': [], 'r2_score': []} if self.task_type == "regression" else {'cross_entropy_loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1_score': []}
         for epoch in tqdm(range(self.epochs), desc='Training Progress', disable=not verbose):
-            epoch_metrics = {'accuracy': [], 'mse_loss': [], 'mae_loss': [], 'mape_loss': [], 'r2_score': []} if self.task_type == "regression" else {'cross_entropy_loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1_score': []}
 
             # Shuffle the data at the beginning of each epoch
             indices = np.arange(training_data.shape[0])
@@ -230,26 +229,26 @@ class MLP:
                 self.backward(output, batch_labels, activations)
 
             # Calculate metrics
-            output, _ = self.forward(training_data.T)
+            output, _ = self.forward(validation_data.T)
             if self.task_type == "regression":
                 output = np.round(output)
-                epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
-                epoch_metrics['mse_loss'].append(mse_loss(batch_labels, output.T))
-                epoch_metrics['mae_loss'].append(mae_loss(batch_labels, output.T))
-                epoch_metrics['mape_loss'].append(mape_loss(batch_labels, output.T))
-                epoch_metrics['r2_score'].append(r2_score(batch_labels, output.T))
+                epoch_metrics['accuracy'].append(accuracy(validation_labels, output.T))
+                epoch_metrics['mse_loss'].append(mse_loss(validation_labels, output.T))
+                epoch_metrics['mae_loss'].append(mae_loss(validation_labels, output.T))
+                epoch_metrics['mape_loss'].append(mape_loss(validation_labels, output.T))
+                epoch_metrics['r2_score'].append(r2_score(validation_labels, output.T))
             elif self.task_type == "classification":
                 output = np.where(output >= 0.5, 1, 0)
-                epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(batch_labels, output.T))
-                epoch_metrics['accuracy'].append(accuracy(batch_labels, output.T))
-                epoch_metrics['precision'].append(precision(batch_labels, output.T))
-                epoch_metrics['recall'].append(recall(batch_labels, output.T))
-                epoch_metrics['f1_score'].append(f1_score(batch_labels, output.T))
+                epoch_metrics['accuracy'].append(accuracy(validation_labels, output.T))
+                epoch_metrics['cross_entropy_loss'].append(cross_entropy_loss(validation_labels, output.T))
+                epoch_metrics['precision'].append(precision(validation_labels, output.T))
+                epoch_metrics['recall'].append(recall(validation_labels, output.T))
+                epoch_metrics['f1_score'].append(f1_score(validation_labels, output.T))
             else:
                 raise ValueError("Unknown task type")
             
             # Early stopping        
-            if validation_data is not None and validation_labels is not None:
+            if early_stopping_rounds is not None:
                 validation_loss = self.evaluate(validation_data, validation_labels)
                 if verbose:
                     print(f"Epoch {epoch + 1}/{self.epochs} - Validation loss: {validation_loss}")
@@ -265,13 +264,10 @@ class MLP:
                             print(f"Early stopping at epoch {epoch + 1}")
                         break
 
-            # Compute average metrics for the epoch
-            avg_epoch_metrics = {k: np.mean(v) for k, v in epoch_metrics.items()}
             if verbose:
-                print(f"Epoch {epoch + 1}/{self.epochs} - {avg_epoch_metrics}")
-            metrics.append(avg_epoch_metrics)
+                print(f"Epoch {epoch + 1}/{self.epochs} - {epoch_metrics}")
 
-        return metrics
+        return epoch_metrics
 
     def get_state(self):
         # Assuming weights and biases are stored in lists self.weights and self.biases
