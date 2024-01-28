@@ -34,8 +34,8 @@ Author:
     Christian William
     christian.william@etu.unige.ch
     
-    Mohammed Massi Rashidi
-    mohammed.rashidi@etu.unige.ch
+    Mohammad Massi Rashidi
+    mohammad.rashidi@etu.unige.ch
     
 References:
     - https://matplotlib.org
