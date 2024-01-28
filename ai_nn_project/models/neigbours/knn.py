@@ -35,8 +35,8 @@ Author:
     Christian William
     christian.william@etu.unige.ch
     
-    Mohammed Massi Rashidi
-    mohammed.rashidi@etu.unige.ch
+    Mohammad Massi Rashidi
+    mohammad.rashidi@etu.unige.ch
 
 References:
     - Cover, T., & Hart, P. (1967). Nearest neighbor pattern classification. IEEE Transactions on Information Theory, 13(1), 21-27.

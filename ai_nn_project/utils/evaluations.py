@@ -42,8 +42,8 @@ Author:
     Christian William
     christian.william@etu.unige.ch
     
-    Mohammed Massi Rashidi
-    mohammed.rashidi@etu.unige.ch
+    Mohammad Massi Rashidi
+    mohammad.rashidi@etu.unige.ch
     
 References:
     - https://en.wikipedia.org/wiki/Mean_squared_error

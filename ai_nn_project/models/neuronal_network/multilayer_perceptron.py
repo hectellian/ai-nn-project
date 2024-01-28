@@ -34,8 +34,8 @@ Author:
     Christian William
     christian.william@etu.unige.ch
     
-    Mohammed Massi Rashidi
-    mohammed.rashidi@etu.unige.ch
+    Mohammad Massi Rashidi
+    mohammad.rashidi@etu.unige.ch
 
 References:
     - F. Rosenblatt, "The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain", Cornell Aeronautical Laboratory, 1957.
